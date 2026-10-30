@@ -66,7 +66,8 @@ main:
     lea rdi, [cmd_akcja]   ;Zapytanie Zenity
     xor eax, eax
     call system
-    mov r13d, eax          ; 0 = SZYFROWANIE, inne = DESZYFROWANIE
+    mov r13d, eax          
+    ;0 = SZYFROWANIE, inne = DESZYFROWANIE
 
     lea rdi, [cmd_klucz]
     lea rsi, [tryb_r]
@@ -74,7 +75,8 @@ main:
     call popen
     test rax, rax
     jz .zakoncz
-    mov r12, rax                       ; r12 = potok Zenity
+    mov r12, rax
+    ; r12 = potok Zenity
 
     lea rdi, [bufor_haslo]
     mov rsi, 64
@@ -91,7 +93,7 @@ main:
 .petla_nl_haslo:
     cmp byte [rdi], 0
     je .sprawdz_haslo
-    cmp byte [rdi], 10                 ; kod ASCII '\n'
+    cmp byte [rdi], 10 
     je .zamien_nl_haslo
     inc rdi
     jmp .petla_nl_haslo
@@ -139,7 +141,7 @@ main:
     ; rdi wskazuje na znak końcowy 0 w plik_wyjscie
     cmp r13d, 0
     jne .rozszerzenie_dec
-    ; Szyfrowanie -> dopisujemy ".enc"
+    ; Szyfrowanie -> dopisujemy "_enc"
     mov byte [rdi], '_'
     mov byte [rdi+1], 'e'
     mov byte [rdi+2], 'n'
@@ -148,7 +150,20 @@ main:
     jmp .otworz_pliki
 
 .rozszerzenie_dec:
-    ; Deszyfrowanie -> dopisujemy ".dec"
+    ; Deszyfrowanie ->usuwamy "_enc" dopisujemy "_dec"
+
+    ;Nazwa ma >=4 znaki
+    lea rax, [plik_wyjscie+4]
+    cmp rdi, rax ;
+    jb .dopisz_dec
+
+    cmp dword [rdi-4], '_enc'
+    jne .dopisz_dec ;jezeli nie ma to idz dopisac _dec
+
+    ;cofamy wskaznik o 4
+    sub rdi,4
+
+.dopisz_dec:
     mov byte [rdi], '_'
     mov byte [rdi+1], 'd'
     mov byte [rdi+2], 'e'
@@ -234,7 +249,6 @@ main:
     jmp .petla_glowna
 
 .koniec_przetwarzania:
-    ; --- 6. ZAMKNIĘCIE PLIKÓW ---
     mov rax, 3                         ; sys_close (wyjściowy)
     mov rdi, r15
     syscall
@@ -249,7 +263,6 @@ main:
     call system
 
 .zakoncz:
-    ; Sprzątanie rejestrów przed wyjściem
     pop r15
     pop r14
     pop r13
